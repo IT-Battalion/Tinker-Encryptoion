@@ -5,6 +5,7 @@ plugins {
 
 group 'at.pelias'
 version '1.0-SNAPSHOT'
+mainClassName = "main.Main"
 
 repositories {
     mavenCentral()

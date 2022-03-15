@@ -1,37 +1,36 @@
 package main;
 
 import com.google.crypto.tink.*;
+import com.google.crypto.tink.aead.AeadConfig;
 
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
 
 public class Main {
     private static final String secret = "secret.test";
     private static final String fileName = "generated_key.json";
 
     public static void main(String[] args) throws GeneralSecurityException {
+        AeadConfig.register();
         KeysetHandle keyset = generateKey();
         String input = JOptionPane.showInputDialog(null, "Text zum Encrypten hier eingeben:");
-        JOptionPane.showConfirmDialog(null, encryptWithKey(input, keyset));
-        input = JOptionPane.showInputDialog(null, "Text zum Decrypten hier eingeben:");
-        JOptionPane.showConfirmDialog(null, decrypt(input));
+        byte[] schas = encryptWithKey(input, keyset);
+        JOptionPane.showMessageDialog(null, new String(schas) + "\n" + new String(decrypt(schas)));
     }
 
-    private static String encryptWithKey(String text, KeysetHandle keysetHandle) throws GeneralSecurityException {
-        byte[] data = keysetHandle.getPrimitive(Aead.class).encrypt(text.getBytes(), secret.getBytes());
-        return Arrays.toString(data);
+    private static byte[] encryptWithKey(String text, KeysetHandle keysetHandle) throws GeneralSecurityException {
+        return keysetHandle.getPrimitive(Aead.class).encrypt(text.getBytes(), secret.getBytes());
     }
 
-    private static String decrypt(String text) {
+    private static byte[] decrypt(byte[] text) {
         try {
             KeysetHandle keysetHandle = CleartextKeysetHandle.read(
                     JsonKeysetReader.withFile(new File(fileName)));
-            keysetHandle.getPrimitive(Aead.class).decrypt(text.getBytes(), secret.getBytes());
-        } catch (GeneralSecurityException | IOException e) {
-            e.printStackTrace();
+            return keysetHandle.getPrimitive(Aead.class).decrypt(text, secret.getBytes());
+        } catch (IOException | GeneralSecurityException ex) {
+            ex.printStackTrace();
         }
         return null;
     }
